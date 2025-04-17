@@ -1,0 +1,31 @@
+[tasks.format]
+install_crate = "rustfmt"
+command = "cargo"
+args = ["fmt", "--", "--write-mode=overwrite"]
+
+[tasks.clean]
+command = "cargo"
+args = ["clean"]
+
+[tasks.dev]
+command = "cargo"
+args = ["watch" , "-x" , "build" , "-x" , "test" , "-x" , "run"]
+
+[tasks.build]
+command = "cargo"
+args = ["build"]
+dependencies = ["clean"]
+
+[tasks.test]
+command = "cargo"
+args = ["test"]
+dependencies = ["clean"]
+
+[tasks.my-flow]
+dependencies = [
+    "format",
+    "build",
+    "test"
+]
+[tasks.pre-commit]
+dependencies = ["fmt", "lint", "test"]
