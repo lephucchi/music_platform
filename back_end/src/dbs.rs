@@ -1,10 +1,12 @@
-use sqlx::{postgres::PgPoolOptions, PgPool};
+use sqlx::{ Pool, Postgres};
 
-pub async fn initialed_db(dsm: &str , max_conns: u32) -> PgPool {
-    let db = PgPoolOptions::new().max_connections(max_conns).connect(dsm).await.expect("Cannot connect to Database");
+#[derive(Debug, Clone)]
+pub struct DBClient{
+    pub pool: Pool<Postgres>
+}
 
-    sqlx::migrate!().run(&db).await.expect("cannot migrate database");
-    
-    db
-
+impl DBClient {
+    pub fn new(pool: Pool<Postgres>)-> Self {
+        DBClient { pool }
+    }
 }

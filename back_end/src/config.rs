@@ -1,10 +1,23 @@
-use dotenv::var;
-
-pub fn get_dsn() -> String {
-    var(key)
+#[derive(Degub,Clone)]
+pub struct Config{
+    pub database_url: String,
+    pub jwt_secret: String,
+    pub jwt_maxage: i64,
+    pub port: u16,
 }
 
-pub fn get_port() -> u16 {
-    var("PORT").unwrap().parse().unwrap()
-}
+impl Config {
+    pub fn init() -> Config{
+        let database_url = std::env::var("DATABASE_URL").expect("DATABASE_URL not found");
+        let jwt_secret_key = std::env::var("JWT_SECRET_KEY").expect("JWT_SECRET_KEY not found");
+        let jwt_maxage = std::env::var("JWT_MAXAGE").expect("JWT_MAXAGE not found");
 
+        Config{
+            database_url,
+            jwt_secret_key,
+            jwt_maxage: jwt_maxage.parse::<i64>().unwrap(),
+            port: 8000,
+        }
+    }
+
+}
