@@ -28,3 +28,4 @@ regex = "1.11.0"
 symphonia = { version = "0.5.4", features = ["aac", "flac", "mp3", "wav", "ogg"] }
 tokio-util = "0.7.12"
 tracing = "0.1.41"
+router = "0.6.0"
