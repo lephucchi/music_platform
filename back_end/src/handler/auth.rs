@@ -13,7 +13,7 @@ use axum_extra::extract::cookie::Cookie;
 use validator::Validate;
 
 use crate::{
-    database::users::UserExist,
+    databases::users::UserExist,
     dtos::{FilterUserDto, LoginUserDto, RegisterUserDto, Response, UserLoginResponseDto},
     errors::{ErrorMessage, HttpError},
     utils::{password, token},
@@ -79,7 +79,7 @@ pub fn login(
     if result.is_none(){
         result = app_state.db_client
         .get_user(None, Some(&body.identifier), None)
-        .await
+        .await  
         .map_err(|e| HttpError::server_error(e.to_string()))?;
     }
 

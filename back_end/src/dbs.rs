@@ -1,12 +1,12 @@
 use sqlx::{ Pool, Postgres};
 
 #[derive(Debug, Clone)]
-pub struct DBClient{
+pub struct DBClients{
     pub pool: Pool<Postgres>
 }
 
-impl DBClient {
+impl DBClients {
     pub fn new(pool: Pool<Postgres>)-> Self {
-        DBClient { pool }
+        DBClients { pool }
     }
 }

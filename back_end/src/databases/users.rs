@@ -18,13 +18,13 @@ pub trait UserExist{
         password_hash: T,
     )-> Result<User, sqlx::Error>;
 
-    async fn update_username<T: Into<string> + Send>(
+    async fn update_username<T: Into<String> + Send>(
         &self,
         user_id: Uuid,
         username: T,
     )-> Result<User, sqlx::Error> ;
 
-    async fn update_user_password_hash<T: Into<string> + Send>(
+    async fn update_user_password_hash<T: Into<String> + Send>(
         &self,
         user_id: Uuid,
         password_password_hash: String,
@@ -33,7 +33,6 @@ pub trait UserExist{
     
 }
 
-#[async_trait]
 impl UserExist for DBClients {
     async fn get_user(
         &self,
@@ -55,7 +54,7 @@ impl UserExist for DBClients {
         Ok(user)
     }
 
-    async fn save_user<T: Into_<String> +Send> (
+    async fn save_user<T: Into<String> +Send> (
         &self,
         username:T,
         email: T,
