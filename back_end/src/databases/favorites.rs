@@ -29,7 +29,7 @@ impl FavoriteExist for DBClients {
         &self,
         track_id: Uuid,
         user_id: Uuid,
-    ) -> Result<Favorite, sqlx::Error> {
+    ) -> Result<(), sqlx::Error> {
         let query = r#"
             INSERT INTO favorites (track_id, user_id)
             VALUES ($1, $2)
