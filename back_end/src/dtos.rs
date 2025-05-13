@@ -235,7 +235,7 @@ fn convert_duration_to_seconds(duration: &duration) -> f64{
 
 
 #[derive(Debug, Serialize, Deserialize, Debug)]
-pub struct TractResponseDto {
+pub struct TrackResponseDto {
     pub tracks: vec<FilterTrackDto>,
 }
 

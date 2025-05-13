@@ -30,4 +30,5 @@ tokio-util = "0.7.12"
 tracing = "0.1.41"
 router = "0.6.0"
 json = "0.12.4"
+double_dot_state = "0.4.1"
 

@@ -4,7 +4,7 @@ use uuid::Uuid;
 use crate::{dbs::DBClients, dtos::TrackDto};
 
 #[async_trait]
-pub trait FavoriteExist {
+pub trait FavoriteExt {
     async fn  save_favorite(
         &self,
         track_id: Uuid,
@@ -24,7 +24,7 @@ pub trait FavoriteExist {
 }
 
 #[async_trait]
-impl FavoriteExist for DBClients {
+impl FavoriteExt for DBClients {
     async fn save_favorite(
         &self,
         track_id: Uuid,

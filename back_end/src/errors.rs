@@ -1,8 +1,8 @@
 use axum::{
     http::StatusCode,
-    Response::{
+    response::{
         IntoResponse,
-        Response,
+        Response ,
     },
     Json,
 };
@@ -21,7 +21,7 @@ impl fmt::Display for ErrorResponse {
     }
 }
 
-#[derive(Debug, PartiaEq)]
+#[derive(Debug, PartialEq)]
 pub enum ErrorMessage {
     EmptyPassword,
     ExceededMaxPasswordLength(usize),
