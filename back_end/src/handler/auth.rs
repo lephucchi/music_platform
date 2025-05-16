@@ -4,7 +4,7 @@ use axum::{
     http::{header, HeaderMap, StatusCode},
     response::IntoResponse,
     routing::post,
-    Extention,
+    Extension,
     json,
     Router,
 };
@@ -13,7 +13,7 @@ use axum_extra::extract::cookie::Cookie;
 use validator::Validate;
 
 use crate::{
-    databases::users::UserExist,
+    databases::users::UserExt,
     dtos::{FilterUserDto, LoginUserDto, RegisterUserDto, Response, UserLoginResponseDto},
     errors::{ErrorMessage, HttpError},
     utils::{password, token},
@@ -25,15 +25,15 @@ pub fn auth_handler() -> Router{
 }
 
 pub async fn register(
-    Extention(app_state): Extention<Arc<AppState>>, Json(body): Json<RegisterUserDto>,
+    Extension(app_state): Extension<Arc<AppState>>, json(body): json<RegisterUserDto>,
 )-> Result<impl IntoResponse, HttpError> {
     body.validate().map_err(|e| HttpError::bad_request(e.to_string()))?;
 
-    let result = app_state.db_client.save_user(&body.username, &body.email, &hash_password).await();
+    let result = app_state.db_client.save_user(&body.username, &body.email, &hash_password).await;
 
     match result {
         Ok(result) => {
-            Ok((StatusCode::CREATED, Json(Response{
+            Ok((StatusCode::CREATED, json(Response{
                 status: "success",
                 message: "Success register, you can login right now".to_string(),
             })))
@@ -83,7 +83,7 @@ pub fn login(
         .map_err(|e| HttpError::server_error(e.to_string()))?;
     }
 
-    let user = result.ok_or(HttpError::bad_request(ErrorMessage::WrongCredentials.to_string()))?;
+    let user = result.ok_or(HttpError::bad_request(ErrorMessage::WrongCrendentials.to_string()))?;
 
     //compare password
     let password_matches = password::compare(&body.password, &user.password_hash).map_err(|_| HttpError::bad_request(ErrorMessage::WrongCredentials.to_string()))?;

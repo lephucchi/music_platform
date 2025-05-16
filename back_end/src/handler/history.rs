@@ -11,7 +11,7 @@ use tokio::sync::broadcast;
 use crate::{
     auth::JWTAuthMiddleware,
     databases::history::HistoryExt,
-    dots::{FilterTrackDto, PlaybackMessage, TrackResponseDto},
+    dtos::{FilterTrackDto, PlaybackMessage, TrackResponseDto},
     errors::HttpError,
     AppState,
 };

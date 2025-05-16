@@ -5,6 +5,7 @@ use axum::http::{
     HeaderValue, Method,
 };
 use axum_server::tls_rustls::RustlsConfig;
+use backend::dbs::DBClients;
 use config::Config;
 use db::DBClient;
 use dotenv::dotenv;
@@ -16,7 +17,7 @@ use tracing_subscriber::filter::LevelFilter;
 #[derive(Debug, Clone)]
 pub struct AppState {
     pub env: Config,
-    pub db_client: DBClient,
+    pub db_client: DBClients,
 }
 
 #[tokio::main]

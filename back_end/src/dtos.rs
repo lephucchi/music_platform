@@ -1,13 +1,13 @@
-use chrono::NativeDateTime;
+use chrono::NaiveDateTime;
+use regex::Regex;
 use serde::{Deserialize, Serialize};
-use validator::{validator_email, Validate, ValidationError};
-use Regex::Regex;
+use validator::{Validate, ValidationError};
 
 use crate::models::{Duration, User};
 
 #[derive(Validate, Debug, Default, Clone, Deserialize, Serialize)]
 pub struct RegisterUserDto {
-    #[validate(length(min = 3, message = "Username must be at least 3 characters log"))]
+    #[validate(length(min = 3, message = "Username must be at least 3 characters long"))]
     #[validate(custom = "validate_username")]
     pub username: String,
 
@@ -18,58 +18,55 @@ pub struct RegisterUserDto {
     pub email: String,
 
     #[validate(
-        length(min = 6, message = "Password must be at least 6 characters log"),
-        length(max = 12, message = "Password must be at most 12 characters log")
+        length(min = 6, message = "Password must be at least 6 characters long"),
+        length(max = 12, message = "Password must be at most 12 characters long")
     )]
     pub password: String,
 
     #[validate(
         length(min = 1, message = "Confirm password is required"),
-        must_match(other = "password" , message = "confirm password is not match")
+        must_match(other = "password" , message = "Confirm password does not match")
     )]
-    pub confirm_password:String
+    pub confirm_password: String,
 }
 
-fn validate_username(username: &str) -> Result<() , ValidationError> {
+fn validate_username(username: &str) -> Result<(), ValidationError> {
     let re = Regex::new(r"^[a-zA-Z0-9_]+$").unwrap();
-    if !re.is_match(username){
-        return Err(ValidationError::new("Username can only got contain letters, numbers and underscores"));
+    if !re.is_match(username) {
+        return Err(ValidationError::new("invalid_username"));
     }
-    ok(())
+    Ok(())
 }
 
-#[derive(Validate, Debug, Default, Clone, Serialize , Deserialize)]
-pub struct LoginUserDto{
+#[derive(Validate, Debug, Default, Clone, Serialize, Deserialize)]
+pub struct LoginUserDto {
     #[validate(custom = "validate_identifier")]
-    pub indentifier: String,
+    pub identifier: String,
 
     #[validate(
         length(min = 1, message = "Password is required"),
-        length(max = 12, message = "Password must be at most 12 characters log")
+        length(max = 12, message = "Password must be at most 12 characters long")
     )]
     pub password: String,
 }
 
-fn validate_identifier(indentifier: &str) -> Result<() , ValidationError> {
-    let email_regex = Regex::new(
-         r"(?i)^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$"
-    ).unwrap();
-    
+fn validate_identifier(identifier: &str) -> Result<(), ValidationError> {
+    let email_regex = Regex::new(r"(?i)^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$").unwrap();
     let username_regex = Regex::new(r"^[a-zA-Z0-9_]{3,}$").unwrap();
 
-    if !email_regex.is_match(indentifier) && !username_regex.is_match(indentifier) {
-        return Err(ValidationError::new("invalid identifier"))
+    if !email_regex.is_match(identifier) && !username_regex.is_match(identifier) {
+        return Err(ValidationError::new("invalid_identifier"))
     }
 
-    ok(())
+    Ok(())
 }
 
-#[derive(Serialize , Deserialize , Validate)]
+#[derive(Serialize, Deserialize, Validate)]
 pub struct RequestQueryDto {
     #[validate(range(min = 1))]
     pub page: Option<usize>,
 
-    #[validate(range(min = 1) , max = 50)]
+    #[validate(range(min = 1, max = 50))]
     pub limit: Option<usize>,
 }
 
@@ -78,18 +75,20 @@ pub struct FilterUserDto {
     pub id: String,
     pub username: String,
     pub email: String,
-    #[Serialize(rename = "createAt")]
-    pub created_at: NativeDateTime,
-    #[Serialize(rename = "updateAt")]
-    pub updated_at: NativeDateTime,
+
+    #[serde(rename = "createAt")]
+    pub created_at: NaiveDateTime,
+
+    #[serde(rename = "updateAt")]
+    pub updated_at: NaiveDateTime,
 }
 
-impl FilterUserDto{
-    pub fn filter_user(user : &User) -> Self{
-        FilterUserDto{
+impl FilterUserDto {
+    pub fn filter_user(user: &User) -> Self {
+        FilterUserDto {
             id: user.id.to_string(),
-            username: user.username.to_owned(),
-            email: user.email.to_owned(),
+            username: user.username.clone(),
+            email: user.email.clone(),
             created_at: user.created_at.unwrap(),
             updated_at: user.updated_at.unwrap(),
         }
@@ -110,8 +109,6 @@ pub struct TrackDto {
     pub played_at: Option<chrono::NaiveDateTime>,
     pub is_created_by_user: Option<bool>,
 }
-
-
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct UserData {
@@ -137,25 +134,24 @@ pub struct Response {
     pub message: String,
 }
 
-#[derive(Debug, Serialize, Deserialize, Default, Clone, Debug)]
+#[derive(Debug, Serialize, Deserialize, Validate, Clone, Default)]
 pub struct UserPasswordUpdateDto {
     #[validate(
-        length(min = 1, message = "Password is required"),
-        length(max = 12, message = "Password must be at most 12 characters log")
+        length(min = 1, message = "New password is required"),
+        length(max = 12, message = "Password must be at most 12 characters long")
     )]
-    pub new_password:String,
+    pub new_password: String,
 
-    
     #[validate(
-        length(min = 1, message = "Password is required"),
-        length(max = 12, message = "Password must be at most 12 characters log"),
-        must_match(other = "new_password" , message = "new password do not match"),
+        length(min = 1, message = "Confirm new password is required"),
+        length(max = 12, message = "Password must be at most 12 characters long"),
+        must_match(other = "new_password", message = "New passwords do not match"),
     )]
     pub new_password_confirm: String,
 
     #[validate(
-        length(min = 1, message = "Password is required"),
-        length(max = 12, message = "Password must be at most 12 characters log")
+        length(min = 1, message = "Old password is required"),
+        length(max = 12, message = "Password must be at most 12 characters long")
     )]
     pub old_password: String,
 }
@@ -166,9 +162,9 @@ pub struct UploadResponse {
 }
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
-pub struct InCompleteTractInfo {
-    pub title : Options<String>,
-    pub artist: Options<String>,
+pub struct InCompleteTrackInfo {
+    pub title: Option<String>,
+    pub artist: Option<String>,
     pub thumbnail_name: Option<String>,
     pub file_name: Option<String>,
     pub track_id: Option<uuid::Uuid>,
@@ -179,28 +175,28 @@ pub struct InCompleteTractInfo {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct InCompleteTractInfoResponse {
-    pub incomplete_track_info: Vec<InCompleteTractInfo>,
+    pub incomplete_track_info: Vec<InCompleteTrackInfo>,
 }
 
-#[derive(Debug, Serialize ,Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct FilterTrackDto {
     pub id: uuid::Uuid,
-    pub title : Options<String>,
-    pub artist: Options<String>,
-    pub duration_minutes: f64, 
-    pub duration_seconds: f64, 
+    pub title: Option<String>,
+    pub artist: Option<String>,
+    pub duration_minutes: f64,
+    pub duration_seconds: f64,
     pub duration_played: f64,
     pub file_name: Option<String>,
     pub thumbnail_name: Option<String>,
     pub is_favorite: Option<bool>,
-    pub played_at: Option<chrono::NativeDateTime>,
+    pub played_at: Option<chrono::NaiveDateTime>,
     pub is_created_by_user: Option<bool>,
-} 
+}
 
 impl FilterTrackDto {
     pub fn filter_track(track: &TrackDto) -> Self {
-        FilterTrackDto{
-            id: track.id.clone(),
+        FilterTrackDto {
+            id: track.id,
             title: track.title.clone(),
             artist: track.artist.clone(),
             duration_minutes: convert_duration_to_minutes(&track.duration),
@@ -208,62 +204,60 @@ impl FilterTrackDto {
             duration_played: convert_duration_to_seconds(&track.duration_played),
             file_name: track.file_name.clone(),
             thumbnail_name: track.thumbnail_name.clone(),
-            is_favorite: track.is_favorite.clone(),
-            played_at: track.played_at.clone(),
-            is_created_by_user: track.is_created_by_user.clone(),
+            is_favorite: track.is_favorite,
+            played_at: track.played_at,
+            is_created_by_user: track.is_created_by_user,
         }
     }
 
-    pub fn filter_tracks(track: &[TrackDto]) -> vec<FilterTrackDto> {
-        track.iter().map(FilterTrackDto::filter_track).collect()
+    pub fn filter_tracks(tracks: &[TrackDto]) -> Vec<FilterTrackDto> {
+        tracks.iter().map(Self::filter_track).collect()
     }
 }
 
-fn convert_duration_to_minutes(duration: &duration) -> f64{
-    let total_seconds = (duration.months*30*30*60)as f64 + (duration.days*24*60*60)as f64 + (duration.microseconds as f64 / 1000000.0);
-
-    let total_minutes = total_seconds/60.0;
-
-    total_minutes
+fn convert_duration_to_minutes(duration: &Duration) -> f64 {
+    let total_seconds = (duration.months * 30 * 24 * 60 * 60) as f64
+        + (duration.days * 24 * 60 * 60) as f64
+        + (duration.microseconds as f64 / 1_000_000.0);
+    total_seconds / 60.0
 }
 
-fn convert_duration_to_seconds(duration: &duration) -> f64{
-    let total_seconds = (duration.months*30*30*60)as f64 + (duration.days*24*60*60)as f64 + (duration.microseconds as f64 / 1000000.0);
-
-    total_seconds
+fn convert_duration_to_seconds(duration: &Duration) -> f64 {
+    (duration.months * 30 * 24 * 60 * 60) as f64
+        + (duration.days * 24 * 60 * 60) as f64
+        + (duration.microseconds as f64 / 1_000_000.0)
 }
 
-
-#[derive(Debug, Serialize, Deserialize, Debug)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct TrackResponseDto {
-    pub tracks: vec<FilterTrackDto>,
+    pub tracks: Vec<FilterTrackDto>,
 }
 
-#[derive(Debug, Serialize ,Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct SaveFavoritesDto {
     pub track_id: uuid::Uuid,
 }
 
-#[derive(Debug, Serialize ,Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct PlayListDto {
     pub id: uuid::Uuid,
     pub title: String,
     pub thumbnail_path: Option<String>,
-    pub max_track_order: Option<i32>, 
+    pub max_track_order: Option<i32>,
 }
 
-#[derive(Debug, Serialize ,Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct PlayListResponse {
     pub playlists: Vec<PlayListDto>,
 }
 
-#[derive(Debug, Serialize ,Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct AddTrackPlayList {
     pub playlist_id: uuid::Uuid,
     pub track_id: uuid::Uuid,
 }
 
-#[derive(Debug, Serialize ,Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct PlaybackMessageDto {
     pub track_id: uuid::Uuid,
     pub duration_played: i64,

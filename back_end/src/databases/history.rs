@@ -2,7 +2,7 @@ use async_trait::async_trait;
 use sqlx::postgres::types::PgInterval;
 use uuid::Uuid;
 
-use crate::{dbs::DBClient, dtos::TractDto};
+use crate::{dbs::DBClients, dtos::TrackDto};
 
 #[async_trait]
 pub trait HistoryExt {
@@ -16,18 +16,18 @@ pub trait HistoryExt {
     async fn get_user_playback_history(
         &self,
         user_id: Uuid,
-    ) -> Result<Vec<TractDto>, sqlx::Error>;
+    ) -> Result<Vec<TrackDto>, sqlx::Error>;
 }
 
 #[async_trait]
-impl HistoryExt for DBClient {
+impl HistoryExt for DBClients {
     async fn update_insert_playback_history(
         &self,
         track_id: Uuid,
         user_id: Uuid,
         duration_time: i64,
     ) -> Result<(), sqlx::Error> {
-        let query = sqlx::query!( r#"
+        let existing_entry = sqlx::query!( r#"
             SELECT id, duration_played, played_at
             FROM playback_history
             WHERE user_id = $1 AND track_id = $2
@@ -76,8 +76,9 @@ impl HistoryExt for DBClient {
     async fn get_user_playback_history(
         &self,
         user_id: Uuid,
-    ) -> Result<Vec<TractDto>, sqlx::Error> {
+    ) -> Result<Vec<TrackDto>, sqlx::Error> {
         let query = sqlx::query_as!(
+            TrackDto,
             r#"
                 SELECT
                     t.id,
@@ -105,7 +106,7 @@ impl HistoryExt for DBClient {
         .fetch_all(&self.pool)
         .await?;
 
-        let rows = sqlx::query_as::<_, TractDto>(query)
+        let rows = sqlx::query_as::<_, TrackDto>(query)
             .bind(user_id)
             .fetch_all(self)
             .await?;

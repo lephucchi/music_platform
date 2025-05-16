@@ -8,10 +8,10 @@ use Axum::{
     Json,
     Router,
 };
-use Validator::Validate;
+use validator::Validate;
 use crate::{
     auth::JWTAuthMiddleware,
-    database::users::UserExt,
+    databases::users::UserExt,
     dtos::{FilterTrackDto, NameUpdateDto, Response, UserData, UserPasswordUpdateDto,UserResponseDto},
     errors::{ErrorMessage, HttpError},
     utils::password,

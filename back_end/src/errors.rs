@@ -135,10 +135,10 @@ impl HttpError {
     }
 
     pub fn into_http_response(self) -> Response {
-        HttpError {
-            message: self.message.clone(),
-            status: "fail".to_string(),
-        }
+        let json_response = Json(ErrorResponse {
+            status: self.status.to_string(),
+            message: self.message,
+        });
         (self.status, json_response).into_response()
     }
 

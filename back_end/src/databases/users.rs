@@ -4,7 +4,7 @@ use uuid::Uuid;
 use crate::{dbs::DBClients, models::User};
 
 #[async_trait]
-pub trait UserExist{
+pub trait UserExt{
     async fn get_user( 
         &self, user_id:Option<Uuid>,
         user_name: Option<&str>, 
@@ -33,7 +33,7 @@ pub trait UserExist{
     
 }
 
-impl UserExist for DBClients {
+impl UserExt for DBClients {
     async fn get_user(
         &self,
         user_id: Option<Uuid>,
@@ -49,7 +49,7 @@ impl UserExist for DBClients {
                 ($3::text IS NULL OR email = $3)  
         "#;
 
-        let user = sqlx::query_as::<_, User>(query).bind(user_id).bind(username).bind(email).fetch_optional(&self.pool).await?;
+        let user = sqlx::query_as::<_, User>(query).bind(user_id).bind(user_name).bind(email).fetch_optional(&self.pool).await?;
 
         Ok(user)
     }
@@ -75,10 +75,11 @@ impl UserExist for DBClients {
         Ok(user)
     }
 
-    async fn update_username<T: Into<String> + send>(
+    async fn update_username<T: Into<String> + Send>(
         &self,
         user_id: Option<Uuid>,
         username: T ,
+        password_hash: T,
     ) -> Result<User , sqlx::Error> {
         let user = sqlx::query_as!(
             User,

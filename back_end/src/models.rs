@@ -1,7 +1,11 @@
 use serde::{Deserialize, Serialize};
+use uuid::Uuid;
+use chrono::NaiveDateTime;
+use sqlx::FromRow;
+use sqlx::postgres::types::PgInterval;
 
 
-#[Derive(Debug, Serialize , Deserialize , CLone)]
+#[derive(Debug, Serialize , Deserialize , Clone)]
 pub struct Duration {
     pub months: i32,
     pub days: i32,
@@ -61,7 +65,7 @@ pub struct Track {
     pub updated_at: Option<NaiveDateTime>
 }
 
-#[drive(Debug, Serialize, Deserialize, FromRow)]
+#[derive(Debug, Serialize, Deserialize, FromRow)]
 pub struct AudioFile {
     pub id: Uuid,
     pub track_id: Option<Uuid>,
@@ -75,7 +79,7 @@ pub struct AudioFile {
 }
 
 
-#[drive(Debug, Serialize, Deserialize, FromRow)]
+#[derive(Debug, Serialize, Deserialize, FromRow)]
 pub struct PlaylistTrack {
     pub playlist_id: Uuid,
     pub track_id: Uuid,
@@ -83,7 +87,7 @@ pub struct PlaylistTrack {
 }
 
 
-#[drive(Debug, Serialize, Deserialize, FromRow)]
+#[derive(Debug, Serialize, Deserialize, FromRow)]
 pub struct PlaybackHistory {
     pub id: Uuid,
     pub user_id: Uuid,
@@ -93,19 +97,12 @@ pub struct PlaybackHistory {
 
 }
 
-#[drive(Debug, Serialize, Deserialize, FromRow)]
+#[derive(Debug, Serialize, Deserialize, FromRow)]
 pub struct UserFavorite{
     pub id: Uuid,
     pub user_id: Uuid,
     pub track_id: Uuid,
     pub created_at: NaiveDateTime,
 }
-
-impl User {
-    pub fn new(name: String, email: String, password: String) -> Self {
-        Self { id: 0, name, email, password, created_at: Utc::now(), updated_at: Utc::now() }
-    }
-}
-
 
 
