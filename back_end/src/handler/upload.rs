@@ -165,7 +165,7 @@ pub async fn upload_chunks(
 
     if let Some(track_id) = track_id {
         if let Some(existing_file) = app_state.db_client.get_audio_file(track_id).await.map_err(|e| HttpError::server_error(e.to_string()))? {
-            uploaded_chunks = existing_file.uploaded_chunks; // Get the uploaded_chunks value
+            uploaded_chunks = existing_file.upload_chunks; // Get the uploaded_chunks value
         }
     }
 

@@ -1,53 +1,28 @@
 use std::sync::Arc;
 
 use axum::{
-    extract::{ws::{Message, WebSocket}, State, WebSocketUpgrade},
-    http::Version, response::IntoResponse, routing::{any, get}, Extension, Router, Json, 
-}; 
-
+    extract::{
+        ws::{Message, WebSocket}, State, WebSocketUpgrade
+    }, http::Version, response::IntoResponse, routing::{any, get}, Extension, Json, Router
+};
 use serde::Serialize;
 use tokio::sync::broadcast;
 
 use crate::{
-    auth::JWTAuthMiddleware,
-    databases::history::HistoryExt,
-    dtos::{FilterTrackDto, PlaybackMessage, TrackResponseDto},
-    errors::HttpError,
-    AppState,
+    auth::JWTAuthMiddleware, databases::history::HistoryExt, dtos::{FilterTrackDto, PlaybackMessageDto, TrackResponseDto}, errors::HttpError, AppState
 };
 
 pub fn history_handler() -> Router {
     Router::new()
         .route("/", get(get_user_playback_history))
         .route("/add", any(add_history))
-        .with_state(broadcast::channel::<String>(100).0)
+            .with_state(broadcast::channel::<String>(16).0)
 }
 
 #[derive(Serialize)]
 struct ErrorResponse {
     error: String,
 }
-
-pub fn get_user_playback_history(
-    Extension(app_state): Extension<Arc<AppState>>,
-    Extension(user): Extension<JWTAuthMiddleware>,
-) -> Result<impl IntoResponse, HttpError> {
-    let user = &user.user;
-    let user_id = uuid::Uuid::parse_str(user.id.to_string()).unwrap();
-
-    let history = app_state
-        .db_client
-        .get_user_playback_history(user_id.clone())
-        .await
-        .map_err(|e| HttpError::server_error(e.to_string()))?;
-
-    let response = TrackResponseDto {
-        tracks: filter_tracks,
-    };
-
-    Ok(Json(response))
-}
-
 
 pub async fn add_history(
     ws: WebSocketUpgrade,
@@ -82,7 +57,7 @@ async fn handle_socket(
                         let duration_played = playback_msg.duration_played;
 
                         match app_state.db_client
-                            .update_or_insert_playback_hisotry(track_id.clone(),user_id.clone(), duration_played)
+                            .update_insert_playback_history(track_id.clone(),user_id.clone(), duration_played)
                             .await {
                                 Ok(_) => {
                                     println!("Playback history updated successfully.");
@@ -114,3 +89,24 @@ async fn handle_socket(
     }
 }
 
+
+async fn get_user_playback_history(
+    Extension(app_state): Extension<Arc<AppState>>,
+    Extension(user): Extension<JWTAuthMiddleware>,
+) -> Result<impl IntoResponse, HttpError> {
+    let user = &user.user;
+    let user_id = uuid::Uuid::parse_str(&user.id.to_string()).unwrap();
+
+    let tracks = app_state.db_client
+        .get_user_playback_history(user_id.clone())
+        .await
+        .map_err(|e| HttpError::server_error(e.to_string()))?;
+
+    let filter_tracks = FilterTrackDto::filter_tracks(&tracks);
+
+    let response = TrackResponseDto {
+        tracks: filter_tracks,
+    };
+    
+    Ok(Json(response))
+}

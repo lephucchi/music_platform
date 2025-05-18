@@ -19,8 +19,8 @@ pub fn create_token (user_id: &str, secret: &[u8], expires_in_seconds: i64) -> R
 
     let now = Utc::now();
     let iat = now.timestamp() as usize;
-    let exp = (now + Duration::minutes(expires_in_seconds).timestamp() as usize);
-    let claims: TokenClaims = TokenClaim{
+    let exp = (now + Duration::seconds(expires_in_seconds)).timestamp() as usize;
+    let claims = TokenClaims {
         sub: user_id.to_string(),
         iat,
         exp,
@@ -33,11 +33,11 @@ pub fn create_token (user_id: &str, secret: &[u8], expires_in_seconds: i64) -> R
     )
 }
 
-pub fn decode_token<T: Into<String>>(token: T, secret: &[u8],) -> Result<String, HttpError> {
-    let decoded = decode::<TokenClaims>(&token.into(), &DecodingKey::from_secret(Secret), &Validation::new(Algorithm::HS256));
+pub fn decode_token<T: Into<String>>(token: T, secret: &[u8]) -> Result<String, HttpError> {
+    let decoded = decode::<TokenClaims>(&token.into(), &DecodingKey::from_secret(secret), &Validation::new(Algorithm::HS256));
 
-    match decode {
-        Ok(token) => Ok(token.claims.sub),
+    match decoded {
+        Ok(token_data) => Ok(token_data.claims.sub),
         Err(_) => Err(HttpError::new(ErrorMessage::InvalidToken.to_string(), StatusCode::UNAUTHORIZED)),
     }
 }

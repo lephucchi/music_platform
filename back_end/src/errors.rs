@@ -17,7 +17,7 @@ pub struct  ErrorResponse {
 
 impl fmt::Display for ErrorResponse {
     fn fmt(&self, f: &mut fmt::Formatter<'_>)-> fmt::Result {
-        write!(f, "{}" , serde_json::to_string(&self).unwrap)
+        write!(f, "{}" , serde_json::to_string(&self).unwrap())
     }
 }
 
@@ -67,22 +67,8 @@ pub struct HttpError {
 impl HttpError {
     pub fn new(message: impl Into<String>, status: StatusCode) -> Self {
         HttpError {
-            message: message.info(),
+            message: message.into(),
             status,
-        }
-    }
-
-    pub fn server_error(message: impl Into<String>) -> Self {
-        HttpError {
-            message: message.info(),
-            status: StatusCode::INTERNAL_SERVER_ERROR,
-        }
-    }
-
-    pub fn bad_request(message: impl Into<String>) -> Self {
-        HttpError {
-            message: message.info(),
-            status: StatusCode::BAD_REQUEST,
         }
     }
 
@@ -113,26 +99,6 @@ impl HttpError {
             status: StatusCode::UNAUTHORIZED,
         }
     }
-    pub fn server_error(message: impl Into<String>) -> Self {
-        HttpError {
-            message: message.into(),
-            status: StatusCode::INTERNAL_SERVER_ERROR,
-        }
-    }
-
-    pub fn bad_request(message: impl Into<String>) -> Self {
-        HttpError {
-            message: message.into(),
-            status: StatusCode::BAD_REQUEST,
-        }
-    }
-
-    pub fn unique_constraint_violation(message: impl Into<String>) -> Self {
-        HttpError {
-            message: message.into(),
-            status: StatusCode::CONFLICT,
-        }
-    }
 
     pub fn into_http_response(self) -> Response {
         let json_response = Json(ErrorResponse {
@@ -156,6 +122,6 @@ impl std::error::Error for HttpError {}
 
 impl IntoResponse for HttpError {
     fn into_response(self) -> Response {
-        self.into_http_response
+        self.into_http_response()
     }
 }

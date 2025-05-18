@@ -95,7 +95,7 @@ impl FilterUserDto {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize,sqlx::FromRow)]
 pub struct TrackDto {
     pub id: uuid::Uuid,
     pub title: Option<String>,
@@ -261,4 +261,10 @@ pub struct AddTrackPlayList {
 pub struct PlaybackMessageDto {
     pub track_id: uuid::Uuid,
     pub duration_played: i64,
+}
+
+#[derive(Validate, Debug, Default, Clone, Serialize, Deserialize)]
+pub struct NameUpdateDto {
+    #[validate(length(min = 1, message = "Name is required"))]
+    pub name: String,
 }

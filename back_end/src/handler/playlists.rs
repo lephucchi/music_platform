@@ -10,8 +10,8 @@ use axum::{
 
 use crate::{
     auth::JWTAuthMiddleware,
-    databases::playlists::PlaylistsExt,
-    dtos::{AddTrackPlaylist, FilterTrackDto, PlayListResponse, Response, TrackResponseDto},
+    databases::playlists::PlayListsExt,
+    dtos::{AddTrackPlayList, FilterTrackDto, PlayListResponse, Response, TrackResponseDto},
     errors::HttpError,
     AppState,
 };
@@ -95,7 +95,7 @@ pub async fn create_playlist(
 pub async fn add_track_to_playlist(
     Extension(app_state): Extension<Arc<AppState>>,
     Extension(_user): Extension<JWTAuthMiddleware>,
-    Json(body): Json<AddTrackPlaylist>,
+    Json(body): Json<AddTrackPlayList>,
 ) -> Result<impl IntoResponse, HttpError> {
     let playlist_id = body.playlist_id;
     let track_id = body.track_id;
@@ -152,7 +152,7 @@ pub async fn get_playlists_tracks(
 
     let tracks = app_state
         .db_client
-        .get_playlists_tracks(playlist_id.clone(), user_id.clone())
+        .get_playlist_tracks(playlist_id.clone(), user_id.clone())
         .await
         .map_err(|e| HttpError::server_error(e.to_string()))?;
 

@@ -17,13 +17,20 @@ impl TrackExt for DBClients {
         &self,
         user_id: Uuid,
     ) -> Result<Vec<TrackDto>, sqlx::Error> {
-        let query = sqlx::query_as::<_, TrackDto>(
+        let tracks = sqlx::query_as!(
+            TrackDto,
             r#"
             SELECT
-                t.id, t.title, t.artist, t.upload_status, t.duration, t.file_name, t.thumbnail_name,
+                t.id,
+                t.title,
+                t.artist,
+                t.duration,
+                t.file_name,
+                t.upload_status,
+                t.thumbnail_name,
                 COALESCE(ph.played_at, NULL) AS played_at,
                 CASE WHEN uf.id IS NOT NULL THEN true ELSE false END AS is_favorite,
-                COALESCE(ph.duration_played, 0) AS duration_played,
+                COALESCE(ph.duration_played, INTERVAL '0 seconds') AS duration_played,
                 CASE WHEN t.user_id = $1 THEN true ELSE false END AS is_created_by_user
             FROM tracks t
             LEFT JOIN user_favorites uf
@@ -34,11 +41,11 @@ impl TrackExt for DBClients {
             ORDER BY RANDOM()
             LIMIT 20
             "#,
+            user_id
         )
-        .bind(user_id)
         .fetch_all(&self.pool)
         .await?;
 
-        Ok(query)
+        Ok(tracks)
     }
 }

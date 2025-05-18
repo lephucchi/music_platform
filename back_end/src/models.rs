@@ -27,7 +27,7 @@ impl From<PgInterval> for Duration {
         Self {
             months: interval.months,
             days: interval.days,
-            microseconds: interval.microseconds,
+            microseconds: interval.microseconds as i32,
         }
     }
 }

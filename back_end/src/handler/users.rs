@@ -1,90 +1,111 @@
 use std::sync::Arc;
 
-use Axum::{
-    Response::IntoResponse,
-    body::Body,
-    routing::{get, put, post, delete},
-    Extention,
-    Json,
-    Router,
+use axum::{
+    response::IntoResponse, 
+    routing::{get, put}, 
+    Extension, 
+    Json, 
+    Router
 };
 use validator::Validate;
-use crate::{
-    auth::JWTAuthMiddleware,
-    databases::users::UserExt,
-    dtos::{FilterTrackDto, NameUpdateDto, Response, UserData, UserPasswordUpdateDto,UserResponseDto},
-    errors::{ErrorMessage, HttpError},
-    utils::password,
-    AppState,
-};
+
+use crate::{auth::JWTAuthMiddleware, databases::users::UserExt, dtos::{FilterUserDto, NameUpdateDto, Response, UserData, UserPasswordUpdateDto, UserResponseDto}, errors::{ErrorMessage, HttpError}, utils::password, AppState};
 
 pub fn users_handler() -> Router {
-    Router::new().route(
-        "/me",
-        get(get_me)
+    Router::new()
+        .route(
+            "/me", 
+            get(get_me)
     )
-    .route("/name" , put (update_user_name))
-    .route("/password" , put (update_user_password))
+    .route("/name", put(update_user_name))
+    .route("/password", put(update_user_password))
 }
 
 pub async fn get_me(
-    Extention(_app_state): Extention<Arc<AppState>>,
-    Extention(user):Extention<UserData>,
+    Extension(_app_state): Extension<Arc<AppState>>, // Extract app state
+    Extension(user): Extension<JWTAuthMiddleware>,
 ) -> Result<impl IntoResponse, HttpError> {
-    let flitered_user = FilterUserDto::filter_user(&user.user);
+    // Filter user data
+    let filtered_user = FilterUserDto::filter_user(&user.user);
+
+    // Prepare response data
     let response_data = UserResponseDto {
-        stauts: "success".to_string(),
+        status: "success".to_string(),
         data: UserData {
-            user: flitered_user,
+            user: filtered_user,
         },
     };
 
+    // Return JSON response
     Ok(Json(response_data))
 }
 
 pub async fn update_user_name(
-    Extention(_app_state): Extention<Arc<AppState>>,
-    Extention(user):Extention<JWTAuthMiddleware>,
+    Extension(app_state): Extension<Arc<AppState>>,
+    Extension(user): Extension<JWTAuthMiddleware>,
     body: Json<NameUpdateDto>,
 ) -> Result<impl IntoResponse, HttpError> {
-    body.validate().map_err(|e| HttpError::bad_request(e.to_string()))?;
+    body.validate()
+       .map_err(|e| HttpError::bad_request(e.to_string()))?;
+
     let user = &user.user;
+
     let user_id = uuid::Uuid::parse_str(&user.id.to_string()).unwrap();
-    let result = _app_state.db_client.update_user_name(&user_id, &body.name).await
-        .map_err(|_| HttpError::server_error(e.to_string()))?;
 
-    let filtered_data = FilterUserDto::filter_user(&result);
+    let result = app_state.db_client.update_username(user_id.clone(), &body.name)
+                    .await
+                    .map_err(|e| HttpError::server_error(e.to_string()))?;
+    
+    let filtered_user = FilterUserDto::filter_user(&result);
 
-    let response_data = UserResponseDto {
+    let response = UserResponseDto {
         data: UserData {
-            user: filtered_data,
+            user: filtered_user,
         },
-        status: "success".to_string(),
+        status: "success".to_string()
     };
 
-    Ok(Json(response_data))
+    Ok(Json(response))
 }
 
 pub async fn update_user_password(
-    Extention(_app_state):Extention<Arc<AppState>>,
-    Extention(user):Extention<JWTAuthMiddleware>,
+    Extension(app_state): Extension<Arc<AppState>>,
+    Extension(user): Extension<JWTAuthMiddleware>,
     body: Json<UserPasswordUpdateDto>,
-) -> Result <impl IntoResponse, HttpError> {
-    body.validate().map_err(|e| HttpError::bad_request(e.to_string()))?;
+) -> Result<impl IntoResponse, HttpError> {
+    body.validate()
+       .map_err(|e| HttpError::bad_request(e.to_string()))?;
+
     let user = &user.user;
+
     let user_id = uuid::Uuid::parse_str(&user.id.to_string()).unwrap();
-    let hashed_password = password::hash_password(&body.password).map_err(|_| HttpError::server_error("Failed to hash password".to_string()))?;
-    let result = _app_state.db_client.update_user_password(&user_id, &hashed_password).await
-        .map_err(|_| HttpError::server_error("Failed to update password".to_string()))?;
 
-    let filtered_data = FilterUserDto::filter_user(&result);
+    let result = app_state.db_client
+            .get_user(Some(user_id.clone()), None, None)
+            .await
+            .map_err(|e| HttpError::server_error(e.to_string()))?;
 
-    let response_data = UserResponseDto {
-        data: UserData {
-            user: filtered_data,
-        },
-        status: "success".to_string(),
+    let user = result.ok_or(HttpError::unauthorized(ErrorMessage::InvalidToken.to_string()))?;
+
+    let password_match = password::compare(&body.old_password, &user.password_hash)
+                        .map_err(|e| HttpError::bad_request(e.to_string()))?;
+    
+    if !password_match {
+        return Err(HttpError::bad_request("Old password is incorrect".to_string()))?;
+    }
+
+    let hashed_password = password::hash(&body.new_password)
+            .map_err(|e| HttpError::server_error(e.to_string()))?;
+
+    app_state.db_client
+        .update_user_password_hash(user_id.clone(), hashed_password.clone())
+        .await
+        .map_err(|e| HttpError::server_error(e.to_string()))?;
+
+    let response = Response {
+        message: "Password updated successfull".to_string(),
+        status: "success",
     };
 
-    Ok(Json(response_data))
+    Ok(Json(response))
 }

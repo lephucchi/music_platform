@@ -4,63 +4,93 @@ use uuid::Uuid;
 use crate::{dbs::DBClients, models::User};
 
 #[async_trait]
-pub trait UserExt{
-    async fn get_user( 
-        &self, user_id:Option<Uuid>,
-        user_name: Option<&str>, 
-        email: Option<&str>) 
-    -> Result<Option<User>, sqlx::Error>;
-    
-    async fn save_user<T: Into<String> + Send> (
+pub trait UserExt {
+    async fn get_user(
+        &self,
+        user_id: Option<Uuid>,
+        username: Option<&str>,
+        email: Option<&str>,
+    ) -> Result<Option<User>, sqlx::Error>;
+
+    async fn save_user<T: Into<String> + Send>(
         &self,
         username: T,
         email: T,
         password_hash: T,
-    )-> Result<User, sqlx::Error>;
+    ) -> Result<User, sqlx::Error>;
 
     async fn update_username<T: Into<String> + Send>(
         &self,
         user_id: Uuid,
-        username: T,
-    )-> Result<User, sqlx::Error> ;
+        username: T
+    ) -> Result<User, sqlx::Error>;
 
-    async fn update_user_password_hash<T: Into<String> + Send>(
+    async fn update_user_password_hash(
         &self,
         user_id: Uuid,
-        password_password_hash: String,
-    )-> Result<User, sqlx::Error> ;
-
-    
+        new_password_hash: String
+    ) -> Result<User, sqlx::Error>;
 }
 
+#[async_trait]
 impl UserExt for DBClients {
     async fn get_user(
         &self,
         user_id: Option<Uuid>,
-        user_name: Option<&str>,
+        username: Option<&str>,
         email: Option<&str>,
     ) -> Result<Option<User>, sqlx::Error> {
         
-        let query: &str = r#"
-            SELECT id, username, email, password_hash, created_at, updated_at FROM users 
-            WHERE (
-                $1::uuid IS NULL OR id = $1) AND
+        let query = r#"
+            SELECT 
+                id, 
+                username, 
+                email, 
+                password_hash,  
+                created_at, 
+                updated_at 
+            FROM users 
+            WHERE 
+                ($1::uuid IS NULL OR id = $1) AND
                 ($2::text IS NULL OR username = $2) AND
-                ($3::text IS NULL OR email = $3)  
+                ($3::text IS NULL OR email = $3)
         "#;
 
-        let user = sqlx::query_as::<_, User>(query).bind(user_id).bind(user_name).bind(email).fetch_optional(&self.pool).await?;
-
+    
+        let user = sqlx::query_as!(
+            User,
+            r#"
+            SELECT 
+                id, 
+                username, 
+                email, 
+                password_hash,  
+                created_at, 
+                updated_at 
+            FROM users 
+            WHERE 
+                ($1::uuid IS NULL OR id = $1) AND
+                ($2::text IS NULL OR username = $2) AND
+                ($3::text IS NULL OR email = $3)
+            "#,
+            user_id,
+            username,
+            email
+        )
+        .fetch_optional(&self.pool)
+        .await?;
+    
         Ok(user)
     }
+    
 
-    async fn save_user<T: Into<String> +Send> (
+    async fn save_user<T: Into<String> + Send>(
         &self,
-        username:T,
+        username: T,
         email: T,
         password_hash: T,
     ) -> Result<User, sqlx::Error> {
-        let user  = sqlx::query_as!(
+        let user = sqlx::query_as!(
             User,
             r#"
             INSERT INTO users (username, email, password_hash) 
@@ -70,17 +100,17 @@ impl UserExt for DBClients {
             username.into(),
             email.into(),
             password_hash.into(),
-        ).fetch_one(&self.pool).await?;
+        ).fetch_one(&self.pool)
+        .await?;
 
         Ok(user)
     }
 
     async fn update_username<T: Into<String> + Send>(
         &self,
-        user_id: Option<Uuid>,
-        username: T ,
-        password_hash: T,
-    ) -> Result<User , sqlx::Error> {
+        user_id: Uuid,
+        username: T
+    ) -> Result<User, sqlx::Error> {
         let user = sqlx::query_as!(
             User,
             r#"

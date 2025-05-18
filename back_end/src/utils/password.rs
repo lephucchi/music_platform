@@ -42,14 +42,14 @@ pub fn hash(password: impl Into<String>) -> Result<String, ErrorMessage> {
 
     let hashed_password = argon2
     .hash_password(password.as_bytes(), &salt)
-    .map.err(|_| ErrorMessage::HashingError)
+    .map_err(|_| ErrorMessage::HashingError)?
     .to_string();
 
     Ok(hashed_password)
 
 }
 
-pub fn compare(password: &str, hashed_password: &str) -> Result<Bool , ErrorMessage> {
+pub fn compare(password: &str, hashed_password: &str) -> Result<bool , ErrorMessage> {
     if password.is_empty(){
         return Err(ErrorMessage::EmptyPassword);
     }

@@ -1,3 +1,14 @@
+mod auth;
+mod config;
+mod databases;
+mod dbs;
+mod dtos;
+mod errors;
+mod handler;
+mod models;
+mod routes;
+mod utils;
+
 use std::{net::SocketAddr, path::PathBuf, sync::Arc};
 
 use axum::http::{
@@ -5,9 +16,8 @@ use axum::http::{
     HeaderValue, Method,
 };
 use axum_server::tls_rustls::RustlsConfig;
-use backend::dbs::DBClients;
 use config::Config;
-use db::DBClient;
+use dbs::DBClients;
 use dotenv::dotenv;
 use routes::create_router;
 use sqlx::postgres::PgPoolOptions;
@@ -57,12 +67,12 @@ async fn main() {
     };
 
     let cors = CorsLayer::new()
-        .allow_origin("https://localhost:3000".parse::<HeaderValue>().unwrap())
+        .allow_origin("http://localhost:3000".parse::<HeaderValue>().unwrap())
         .allow_headers([AUTHORIZATION, ACCEPT, CONTENT_TYPE])
         .allow_credentials(true)
         .allow_methods([Method::GET, Method::POST, Method::PUT]);
 
-    let db_client = DBClient::new(pool);
+    let db_client = DBClients::new(pool);
     let app_state = AppState {
         env: config.clone(),
         db_client,
@@ -72,7 +82,7 @@ async fn main() {
 
     println!(
         "{}",
-        format!("🚀 Server is running on https://localhost:{}", config.port)
+        format!("🚀 Server is running on http://localhost:{}", config.port)
     );
 
     // let listener = tokio::net::TcpListener::bind(format!("0.0.0.0:{}", config.port)).await.unwrap();

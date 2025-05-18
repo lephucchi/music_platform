@@ -54,7 +54,7 @@ pub async fn auth(
     })?;
 
     let token_details =
-        match token::decode_token(token, app_state.env.jwt_secret.as_bytes()) {
+        match token::decode_token(token, app_state.env.jwt_secret_key.as_bytes()) {
             Ok(token_details) => token_details,
             Err(_) => {
                 return Err(HttpError::unauthorized(ErrorMessage::InvalidToken.to_string()));

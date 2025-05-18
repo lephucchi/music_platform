@@ -79,7 +79,17 @@ impl UploadExt for DBClients {
         let existing_file = sqlx::query_as!(
             AudioFile,
             r#"
-            SELECT * FROM audio_files 
+            SELECT 
+                id,
+                track_id,
+                total_chunks,
+                uploaded_chunks AS "upload_chunks!",  -- alias to match the struct field
+                current_chunk,
+                chunk_path,
+                upload_status,
+                created_at,
+                updated_at
+            FROM audio_files 
             WHERE track_id = $1
             "#,
             track_id,
@@ -88,7 +98,7 @@ impl UploadExt for DBClients {
         .await?;
 
         if let Some(mut audio_file) = existing_file {
-            audio_file.uploaded_chunks = uploaded_chunks as i32;
+            audio_file.upload_chunks = uploaded_chunks as i32;
             audio_file.current_chunk = current_chunk as i32;
 
             query!(
@@ -104,7 +114,7 @@ impl UploadExt for DBClients {
                     updated_at = Now()
                 WHERE id = $5
                 "#,
-                audio_file.uploaded_chunks,
+                audio_file.upload_chunks,
                 audio_file.current_chunk,
                 chunk_path,
                 total_chunks as i32,
@@ -137,7 +147,17 @@ impl UploadExt for DBClients {
         let audio_file = query_as!(
             AudioFile,
             r#"
-            SELECT * FROM audio_files 
+            SELECT 
+                id,
+                track_id,
+                total_chunks,
+                uploaded_chunks AS "upload_chunks!",  -- alias to match the struct field
+                current_chunk,
+                chunk_path,
+                upload_status,
+                created_at,
+                updated_at
+            FROM audio_files 
             WHERE track_id = $1
             "#,
             track_id

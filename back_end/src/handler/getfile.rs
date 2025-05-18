@@ -1,5 +1,4 @@
 use std::{path::PathBuf, sync::Arc};
-use tracing_subscriber::filter;
 use uuid::Uuid;
 
 use axum::{
@@ -52,24 +51,23 @@ pub async fn get_incomplete_uploads_handler(
 
 pub async fn get_random_tracks_handler(
     Extension(app_state): Extension<Arc<AppState>>,
-    Extension(user): Extension<JWTAuthMiddleware>,
+    Extension(user): Extension<JWTAuthMiddleware>
 ) -> Result<impl IntoResponse, HttpError> {
     let user = &user.user;
-    let user_id = Uuid::parse_str(&user.id.to_string()).unwrap();
 
-    let tracks = app_state
-        .db_client
-        .get_random_tracks(user_id.clone())
+    let user_id = uuid::Uuid::parse_str(&user.id.to_string()).unwrap();
+
+    let tracks = app_state.db_client.get_random_tracks(user_id.clone())
         .await
         .map_err(|e| HttpError::server_error(e.to_string()))?;
-    
-    let filtered_tracks = FilterTrackDto::filter_tracks(&tracks);
 
-    let rsponse = TrackResponseDto {
-        track_info: FilterTrackDto::filter_tracks(&uploads),
+    let filter_tracks = FilterTrackDto::filter_tracks(&tracks);
+
+    let response = TrackResponseDto {
+        tracks: filter_tracks,
     };
 
-    Ok(Json(rsponse))
+    Ok(Json(response))
 }
 
 async fn stream_audio(
