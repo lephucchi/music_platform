@@ -26,7 +26,7 @@ pub fn get_file_handler() -> Router {
     Router::new()
         .route("/incomplete", get(get_incomplete_uploads_handler))
         .route("/track", get(get_random_tracks_handler))
-        .route("/play/:file_name", get(stream_audio))
+        .route("/play/{file_name}", get(stream_audio))
 }
 
 pub async fn get_incomplete_uploads_handler(

@@ -1,2 +1,8 @@
-/target
 /.env
+/target
+/Cargo.lock
+/cargo-lock.toml
+/Makefile.toml
+/Makefile
+/Makefile.toml
+/gitignore

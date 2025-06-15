@@ -1,22 +1,21 @@
 use std::sync::Arc;
 
 use axum::{
-    extract::Request, 
-    http::header, 
-    middleware::Next, 
-    response::IntoResponse, 
-    Extension
+    http::{Request, header},
+    middleware::Next,
+    response::{IntoResponse, Response},
+    body::Body,
 };
 
 use axum_extra::extract::cookie::CookieJar;
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    databases::users::UserExt, 
-    errors::{ErrorMessage, HttpError}, 
-    models::User, 
-    utils::token, 
-    AppState
+    databases::users::UserExt,
+    errors::{ErrorMessage, HttpError},
+    models::User,
+    utils::token,
+    AppState,
 };
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -24,18 +23,23 @@ pub struct JWTAuthMiddleware {
     pub user: User,
 }
 
-
 // Middleware function for role-based authorization
 pub async fn auth(
-    cookie_jar: CookieJar,
-    Extension(app_state): Extension<Arc<AppState>>,
-    mut req: Request,
+    mut req: Request<Body>,
     next: Next,
-) -> Result<impl IntoResponse, HttpError> {
-    // Extract access token from cookie or Authorization header
+) -> Result<Response, HttpError> {
+    // Lấy Extension<AppState> từ request
+    let app_state = req.extensions().get::<Arc<AppState>>().cloned().ok_or_else(|| {
+        HttpError::unauthorized(ErrorMessage::TokenNotProvided.to_string())
+    })?;
+
+    // Lấy CookieJar từ request
+    let cookie_jar = req.extensions().get::<CookieJar>().cloned();
+
+    // Extract access token from cookie hoặc Authorization header
     let cookies = cookie_jar
-        .get("token")
-        .map(|cookie| cookie.value().to_string())
+        .as_ref()
+        .and_then(|jar| jar.get("token").map(|cookie| cookie.value().to_string()))
         .or_else(|| {
             req.headers()
                 .get(header::AUTHORIZATION)
@@ -67,15 +71,15 @@ pub async fn auth(
         })?;
 
     // Fetch user from database
-        let user = app_state.db_client.get_user(Some(user_id), None, None)
+    let user = app_state.db_client.get_user(Some(user_id), None, None)
         .await
         .map_err(|_| {
             HttpError::unauthorized(ErrorMessage::UserNoLongerExist.to_string())
         })?;
 
-        let user = user.ok_or_else(|| {
-            HttpError::unauthorized(ErrorMessage::UserNoLongerExist.to_string())
-        })?;
+    let user = user.ok_or_else(|| {
+        HttpError::unauthorized(ErrorMessage::UserNoLongerExist.to_string())
+    })?;
 
     // Insert the authenticated user into request extensions
     req.extensions_mut().insert(JWTAuthMiddleware {

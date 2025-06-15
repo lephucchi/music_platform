@@ -9,13 +9,12 @@ mod models;
 mod routes;
 mod utils;
 
-use std::{net::SocketAddr, path::PathBuf, sync::Arc};
+use std::{net::SocketAddr, sync::Arc};
 
 use axum::http::{
     header::{ACCEPT, AUTHORIZATION, CONTENT_TYPE},
     HeaderValue, Method,
 };
-use axum_server::tls_rustls::RustlsConfig;
 use config::Config;
 use dbs::DBClients;
 use dotenv::dotenv;
@@ -38,17 +37,6 @@ async fn main() {
 
     dotenv().ok();
 
-    let config_http = RustlsConfig::from_pem_file(
-        PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-            .join("certs")
-            .join("localhost.pem"),
-        PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-            .join("certs")
-            .join("localhost-key.pem"),
-    )
-    .await
-    .unwrap();
-
     let config = Config::init();
 
     let pool = match PgPoolOptions::new()
@@ -67,7 +55,7 @@ async fn main() {
     };
 
     let cors = CorsLayer::new()
-        .allow_origin("http://localhost:3000".parse::<HeaderValue>().unwrap())
+        .allow_origin("http://localhost:8000".parse::<HeaderValue>().unwrap())
         .allow_headers([AUTHORIZATION, ACCEPT, CONTENT_TYPE])
         .allow_credentials(true)
         .allow_methods([Method::GET, Method::POST, Method::PUT]);
@@ -85,15 +73,10 @@ async fn main() {
         format!("🚀 Server is running on http://localhost:{}", config.port)
     );
 
-    // let listener = tokio::net::TcpListener::bind(format!("0.0.0.0:{}", config.port)).await.unwrap();
-
-    // axum::serve(listener, app).await.unwrap();
-
     let addr = SocketAddr::from(([0, 0, 0, 0], config.port));
 
-    let mut server = axum_server::bind_rustls(addr, config_http);
-
-    server.http_builder().http2().enable_connect_protocol();
-
-    server.serve(app.into_make_service()).await.unwrap();
+    axum_server::bind(addr)
+        .serve(app.into_make_service())
+        .await
+        .unwrap();
 }

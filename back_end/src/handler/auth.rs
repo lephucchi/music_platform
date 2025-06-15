@@ -21,7 +21,7 @@ use crate::{
 };
 
 pub fn auth_handler() -> Router{
-    Router::new().route("'/register", post(register)).route("/login", post(login))
+    Router::new().route("/register", post(register)).route("/login", post(login))
 }
 
 pub async fn register(

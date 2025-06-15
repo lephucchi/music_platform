@@ -21,7 +21,7 @@ pub fn playlist_hanlder() -> Router {
         .route("/", post(create_playlist))
         .route("/add", post(add_track_to_playlist))
         .route("/", get(get_user_playlists))
-        .route("/:playlist_id", get(get_playlists_tracks))
+        .route("/{playlist_id}", get(get_playlists_tracks))
 }
 
 pub async fn create_playlist(

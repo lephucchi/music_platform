@@ -68,7 +68,7 @@ async fn handle_socket(
                                         error: format!("Failed to update playback history: {}", e),
                                     };
 
-                                    let _ = socket.send(Message::Text(serde_json::to_string(&error_message).unwrap()));
+                                    let _ = socket.send(Message::Text(serde_json::to_string(&error_message).unwrap().into()));
                                 }
                             };
 
@@ -77,7 +77,7 @@ async fn handle_socket(
                     let error_message = ErrorResponse {
                         error: "Invalid message format.".to_string(),
                     };
-                    let _ = socket.send(Message::Text(serde_json::to_string(&error_message).unwrap())).await;
+                    let _ = socket.send(Message::Text(serde_json::to_string(&error_message).unwrap().into())).await;
                 }
 
                 }

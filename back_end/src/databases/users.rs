@@ -40,22 +40,6 @@ impl UserExt for DBClients {
         username: Option<&str>,
         email: Option<&str>,
     ) -> Result<Option<User>, sqlx::Error> {
-        
-        let query = r#"
-            SELECT 
-                id, 
-                username, 
-                email, 
-                password_hash,  
-                created_at, 
-                updated_at 
-            FROM users 
-            WHERE 
-                ($1::uuid IS NULL OR id = $1) AND
-                ($2::text IS NULL OR username = $2) AND
-                ($3::text IS NULL OR email = $3)
-        "#;
-
     
         let user = sqlx::query_as!(
             User,
